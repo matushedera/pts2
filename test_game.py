@@ -1,4 +1,5 @@
 import unittest
+from typing import List
 
 from game.gameServer import GameServer
 from game.gameServerInterface import GameServerInterface
@@ -7,7 +8,10 @@ from game.dealerInterface import DealerInterface
 from game.game import Game
 from game.card import Card
 from game.cardInterface import CardInterface
-
+from game.hand import Hand
+from game.handInterface import HandInterface
+#from game.trick import Trick
+from game.trickInterface import TrickInterface
 
 class GameCreationTestCase(unittest.TestCase):
 
@@ -66,6 +70,69 @@ class CardTestCase(unittest.TestCase):
         self.assertTrue(self.cK.is_ge(self.c8))
         self.assertTrue(self.cJ.is_ge(self.c8))
 
+class HandSolitaryTestCase(unittest.TestCase):
+
+    def setUp(self):
+        class TrickMockTakeAny(TrickInterface):
+            def play_as_lowest(self, c: CardInterface) -> bool:
+                return True
+            def play_normal(self, c: CardInterface) -> bool:
+                return True
+        class TrickMockTakeLowest(TrickInterface):
+            def play_as_lowest(self, c: CardInterface) -> bool:
+                return True
+            def play_normal(self, c: CardInterface) -> bool:
+                return False
+        class TrickMockTakeNone(TrickInterface):
+            def play_as_lowest(self, c: CardInterface) -> bool:
+                return False
+            def play_normal(self, c: CardInterface) -> bool:
+                return False
+        class CardMockLow(CardInterface):
+            def is_ge(self, other) -> bool:
+                if (other == self):
+                    return True
+                return False
+        class CardMockHigh(CardInterface):
+            def is_ge(self, other) -> bool:
+                return True
+        cards: List[CardInterface] = [
+            CardMockHigh(),
+            CardMockHigh(),
+            CardMockHigh(),
+            CardMockLow()
+        ] # last one is lowest (no card is lower than itself)
+        self.hand_trick_any: HandInterface = Hand(cards, TrickMockTakeAny())
+        self.hand_trick_lowest: HandInterface = Hand(cards, TrickMockTakeLowest())
+        self.hand_trick_none: HandInterface = Hand(cards, TrickMockTakeNone())
+
+    def test_hand_all_cards_can_be_played(self):
+        self.assertTrue(self.hand_trick_any.play(0))
+        self.assertTrue(self.hand_trick_any.play(0)) # card with index 0 is popped
+        self.assertTrue(self.hand_trick_any.play(0)) # each time it is possible to play it
+        self.assertTrue(self.hand_trick_any.play(0))
+
+    def test_hand_only_lowest_can_be_played(self):
+        self.assertFalse(self.hand_trick_lowest.play(0))
+        self.assertFalse(self.hand_trick_lowest.play(1))
+        self.assertFalse(self.hand_trick_lowest.play(2))
+        self.assertTrue(self.hand_trick_lowest.play(3))
+
+    def test_hand_no_card_can_be_played(self):
+        self.assertFalse(self.hand_trick_none.play(0))
+        self.assertFalse(self.hand_trick_none.play(1))
+        self.assertFalse(self.hand_trick_none.play(2))
+        self.assertFalse(self.hand_trick_none.play(3))
+
+    def test_hand_only_available_cards_can_be_played(self):
+        self.assertFalse(self.hand_trick_any.play(-1))
+        self.assertFalse(self.hand_trick_any.play(-9))
+        self.assertFalse(self.hand_trick_any.play(5))
+        self.assertFalse(self.hand_trick_any.play(10))
+        self.assertTrue(self.hand_trick_any.play(3))
+        self.assertTrue(self.hand_trick_any.play(2))
+        self.assertTrue(self.hand_trick_any.play(1))
+        self.assertTrue(self.hand_trick_any.play(0))
 
 if __name__ == '__main__':
     unittest.main()
