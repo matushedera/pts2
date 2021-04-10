@@ -1,11 +1,8 @@
 from typing import List
 
-class GameServerInterface:
+class GameInterface:
 
     def play(self, player: int, cardno: int) -> bool:
-        pass
-
-    def new_game(type: str) -> bool:
         pass
 
     def hand(self, player: int) -> List[str]:

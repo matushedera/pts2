@@ -10,7 +10,7 @@ from game.card import Card
 from game.cardInterface import CardInterface
 from game.hand import Hand
 from game.handInterface import HandInterface
-#from game.trick import Trick
+from game.trick import Trick
 from game.trickInterface import TrickInterface
 
 class GameCreationTestCase(unittest.TestCase):
@@ -18,7 +18,7 @@ class GameCreationTestCase(unittest.TestCase):
     def setUp(self):
         class DealerMock(DealerInterface):
             def create_game(self, number_of_players: int) -> Game:
-                return Game(number_of_players, 0)
+                return Game(number_of_players, 0, [], None)
         di: DealerInterface = DealerMock()
         self.gsi: GameServerInterface = GameServer(di)
 
@@ -133,6 +133,82 @@ class HandSolitaryTestCase(unittest.TestCase):
         self.assertTrue(self.hand_trick_any.play(2))
         self.assertTrue(self.hand_trick_any.play(1))
         self.assertTrue(self.hand_trick_any.play(0))
+
+class GamePlayTestCase(unittest.TestCase):
+
+    def setUp(self):
+        class DealerMock(DealerInterface):
+            def create_game(self, number_of_players: int) -> Game:
+                pass
+        trick = Trick()
+        hand1 = Hand([Card("2"), Card("6"), Card("7"), Card("A"), Card("Q"), Card("4")], trick)
+        hand2 = Hand([Card("A"), Card("A"), Card("J"), Card("5"), Card("8"), Card("K")], trick)
+        hand3 = Hand([Card("J"), Card("3"), Card("9"), Card("10"), Card("J"), Card("3")], trick)
+        game = Game(3, 0, [hand1, hand2, hand3], trick)
+        self.game_server = GameServer(DealerMock())
+        self.game_server.game = game
+
+    def test_gameplay_initial_hands(self):
+        self.assertEqual(self.game_server.hand(0), ["2", "6", "7", "A", "Q", "4"])
+        self.assertEqual(self.game_server.hand(1), ["A", "A", "J", "5", "8", "K"])
+        self.assertEqual(self.game_server.hand(2), ["J", "3", "9", "10", "J", "3"])
+
+    def test_gameplay_turns(self):
+        self.assertFalse(self.game_server.play(1, 2), "it's player's 0 turn")
+        self.assertTrue(self.game_server.play(0, 2), "it's player's 0 turn") # player 0 played "7"
+        self.assertTrue(self.game_server.play(1, 2), "it's player's 1 turn") # player 1 played "J"
+        self.assertFalse(self.game_server.play(1, 4), "it's player's 2 turn")
+        self.assertFalse(self.game_server.play(0, 5), "it's player's 2 turn")
+        self.assertTrue(self.game_server.play(2, 0), "it's player's 2 turn") # player 2 played "J"
+        self.assertTrue(self.game_server.play(2, 0), "it's player's 2 turn, because he won previous trick")
+
+    def test_gameplay_greater_or_equal_or_his_lowest(self):
+        self.assertTrue(self.game_server.play(0, 4), "table is empty") # player 0 played "Q"
+        self.assertFalse(self.game_server.play(1, 4), "8 isn't his lowest and is not GE") # player 1 played "8"
+        self.assertTrue(self.game_server.play(1, 1), "A is GE") # player 1 played "A"
+        self.assertFalse(self.game_server.play(2, 3), "10 isn't his lowest and is not GE") # player 2 played "10"
+        self.assertTrue(self.game_server.play(2, 1), "3 in not GE but it is his lowest") # player 2 played "3"
+
+    def test_gameplay_tricks_and_hands(self):
+        self.game_server.play(0, 2) # player 0 played "7"
+        self.assertEqual(self.game_server.hand(0), ["2", "6", "A", "Q", "4"]) # "7 is missing"
+        self.game_server.play(1, 2) # player 1 played "J"
+        self.assertEqual(self.game_server.hand(1), ["A", "A", "5", "8", "K"]) # "J" is missing
+        self.assertEqual(self.game_server.trick(), ["7", "J"]) # played cards are on the table
+        self.game_server.play(2, 0) # player 2 played "J"
+        self.assertEqual(self.game_server.hand(2), ["3", "9", "10", "J", "3"]) # "J" is missing
+        self.assertEqual(self.game_server.trick(), []) # table is empty because new trick started'
+        self.game_server.play(2, 0) # player 2 played "3" (it's his turn because he won previous trick)
+        self.assertEqual(self.game_server.hand(2), ["9", "10", "J", "3"]) # "3" is missing
+        self.game_server.play(0, 3) # player 0 played "Q"
+        self.assertEqual(self.game_server.hand(0), ["2", "6", "A", "4"]) # "Q is missing"
+        self.assertEqual(self.game_server.trick(), ["3", "Q"]) # played cards are on the table
+        self.game_server.play(1, 4) # player 1 played "K"
+        self.assertEqual(self.game_server.hand(1), ["A", "A", "5", "8"]) # "K" is missing
+        self.assertEqual(self.game_server.trick(), []) # table is empty because new trick started'
+        self.game_server.play(1, 1) # player 1 played "A" (it's his turn because he won previous trick)
+        self.assertEqual(self.game_server.hand(1), ["A", "5", "8"]) # "A" is missing
+        self.assertEqual(self.game_server.trick(), ["A"]) # played cards are on the table
+        self.game_server.play(2, 3) # player 2 played "3" (his lowest)
+        self.assertEqual(self.game_server.hand(2), ["9", "10", "J"]) # "3" is missing
+        self.game_server.play(0, 0) # player 0 played "2" (his lowest)
+        self.assertEqual(self.game_server.hand(0), ["6", "A", "4"]) # "2 is missing"
+        self.game_server.play(1, 1)
+        self.assertEqual(self.game_server.hand(1), ["A", "8"])
+        self.game_server.play(2, 2)
+        self.assertEqual(self.game_server.hand(2), ["9", "10"])
+        self.game_server.play(0, 2)
+        self.assertEqual(self.game_server.hand(0), ["6", "A"])
+        self.game_server.play(2, 1)
+        self.assertEqual(self.game_server.hand(2), ["9"])
+        self.game_server.play(0, 1)
+        self.assertEqual(self.game_server.hand(0), ["6"]) # lowest remaining card
+        self.game_server.play(1, 1)
+        self.assertEqual(self.game_server.hand(1), ["A"])
+
+
+
+
 
 if __name__ == '__main__':
     unittest.main()

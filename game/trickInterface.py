@@ -16,7 +16,7 @@ class TrickInterface:
     def size(self) -> int:
         pass
 
-    def cards(self) -> List[str]:
+    def cards(self) -> List[CardInterface]:
         pass
 
     def reset(self) -> None:
