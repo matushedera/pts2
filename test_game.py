@@ -3,7 +3,7 @@ from typing import List
 
 from game.gameServer import GameServer
 from game.gameServerInterface import GameServerInterface
-#from game.dealer import Dealer
+from game.dealer import Dealer
 from game.dealerInterface import DealerInterface
 from game.game import Game
 from game.card import Card
