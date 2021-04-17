@@ -14,9 +14,9 @@ class Card(CardInterface):
         ].index(size_string)
 
     def is_ge(self, other: CardInterface) -> bool:
-        if (self._order_function(self.size_string)
+        if (self._order_function(self.string())
             >=
-            self._order_function(other.size_string)
+            self._order_function(other.string())
             ):
             return True
         return False

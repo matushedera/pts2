@@ -5,7 +5,7 @@ class GameServerInterface:
     def play(self, player: int, cardno: int) -> bool:
         pass
 
-    def new_game(type: str) -> bool:
+    def new_game(self, number_of_players: int) -> bool:
         pass
 
     def hand(self, player: int) -> List[str]:
