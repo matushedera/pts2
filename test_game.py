@@ -8,6 +8,7 @@ from game.dealerInterface import DealerInterface
 from game.game import Game
 from game.card import Card
 from game.cardInterface import CardInterface
+from game.cardAltered import CardAltered
 from game.hand import Hand
 from game.handInterface import HandInterface
 from game.trick import Trick
@@ -154,19 +155,6 @@ class GamePlayTestCase(unittest.TestCase):
         self.game_server: GameServerInterface = GameServer(DealerMock())
         self.game_server.game = Game(3, 0, [hand1, hand2, hand3], trick)
 
-        trick_altered: TrickInterface = TrickAltered();
-        hand1: HandInterface = (
-            Hand([Card("2"), Card("6"), Card("7"), Card("A"), Card("Q"), Card("4")], trick_altered)
-        )
-        hand2: HandInterface = (
-            Hand([Card("A"), Card("A"), Card("J"), Card("5"), Card("8"), Card("K")], trick_altered)
-        )
-        hand3: HandInterface = (
-            Hand([Card("J"), Card("3"), Card("9"), Card("10"), Card("J"), Card("3")], trick_altered)
-        )
-        self.game_server_altered: GameServerInterface = GameServer(DealerMock())
-        self.game_server_altered.game = Game(3, 0, [hand1, hand2, hand3], trick_altered)
-
     def test_gameplay_initial_hands(self):
         self.assertEqual(self.game_server.hand(0), ["2", "6", "7", "A", "Q", "4"])
         self.assertEqual(self.game_server.hand(1), ["A", "A", "J", "5", "8", "K"])
@@ -180,15 +168,6 @@ class GamePlayTestCase(unittest.TestCase):
         self.assertFalse(self.game_server.play(0, 5), "it's player's 2 turn")
         self.assertTrue(self.game_server.play(2, 0), "it's player's 2 turn") # player 2 played "J"
         self.assertTrue(self.game_server.play(2, 0), "it's player's 2 turn, because he won previous trick")
-
-    def test_altered_gameplay_turns(self): #(player 2 played greater/equal card earliest)
-        self.assertFalse(self.game_server_altered.play(1, 2), "it's player's 0 turn")
-        self.assertTrue(self.game_server_altered.play(0, 2), "it's player's 0 turn") # player 0 played "7"
-        self.assertTrue(self.game_server_altered.play(1, 2), "it's player's 1 turn") # player 1 played "J"
-        self.assertFalse(self.game_server_altered.play(1, 4), "it's player's 2 turn")
-        self.assertFalse(self.game_server_altered.play(0, 5), "it's player's 2 turn")
-        self.assertTrue(self.game_server_altered.play(2, 0), "it's player's 2 turn") # player 2 played "J"
-        self.assertTrue(self.game_server_altered.play(1, 0), "it's player's 1 turn, because he won previous trick")
 
     def test_gameplay_greater_or_equal_or_his_lowest(self):
         self.assertTrue(self.game_server.play(0, 4), "table is empty") # player 0 played "Q"
@@ -234,7 +213,61 @@ class GamePlayTestCase(unittest.TestCase):
         self.game_server.play(1, 1)
         self.assertEqual(self.game_server.hand(1), ["A"])
 
+class AlteredGamePlayTestCase(unittest.TestCase):
 
+    def setUp(self):
+        class DealerMock(DealerInterface):
+            def create_game(self, number_of_players: int) -> Game:
+                pass
+
+        trick_altered: TrickInterface = TrickAltered();
+        hand1: HandInterface = (
+            Hand([Card("2"), Card("6"), Card("7"), Card("A"), Card("Q"), Card("4")], trick_altered)
+        )
+        hand2: HandInterface = (
+            Hand([Card("A"), Card("A"), Card("J"), Card("5"), Card("8"), Card("K")], trick_altered)
+        )
+        hand3: HandInterface = (
+            Hand([Card("J"), Card("3"), Card("9"), Card("10"), Card("J"), Card("3")], trick_altered)
+        )
+        self.game_server_altered: GameServerInterface = GameServer(DealerMock())
+        self.game_server_altered.game = Game(3, 0, [hand1, hand2, hand3], trick_altered)
+
+        self.c74734: CardInterface = CardAltered("74734")
+        self.c7626: CardInterface = CardAltered("7626")
+        self.c764: CardInterface = CardAltered("764")
+        self.c764_second: CardInterface = CardAltered("764")
+
+    def test_altered_card_sizes(self):
+        self.assertTrue(self.c74734.string() == "74734")
+        self.assertTrue(self.c7626.string() == "7626")
+        self.assertTrue(self.c764.string() == "764")
+        self.assertTrue(self.c764_second.string() == "764")
+
+    def test_altered_card_comparisson_resulting_in_false(self):
+        self.assertFalse(self.c74734.is_ge(self.c7626))
+        self.assertFalse(self.c74734.is_ge(self.c764))
+        self.assertFalse(self.c74734.is_ge(self.c764_second))
+        self.assertFalse(self.c7626.is_ge(self.c764))
+        self.assertFalse(self.c7626.is_ge(self.c764_second))
+
+    def test_altered_card_comparisson_resulting_in_true(self):
+        self.assertTrue(self.c764_second.is_ge(self.c764))
+        self.assertTrue(self.c764_second.is_ge(self.c7626))
+        self.assertTrue(self.c764_second.is_ge(self.c74734))
+        self.assertTrue(self.c764.is_ge(self.c764_second))
+        self.assertTrue(self.c764.is_ge(self.c7626))
+        self.assertTrue(self.c764.is_ge(self.c74734))
+        self.assertTrue(self.c7626.is_ge(self.c74734))
+
+    def test_altered_gameplay_turns(self): #(player 2 played greater/equal card earliest)
+        self.assertFalse(self.game_server_altered.play(1, 2), "it's player's 0 turn")
+        self.assertTrue(self.game_server_altered.play(0, 2), "it's player's 0 turn") # player 0 played "7"
+        self.assertTrue(self.game_server_altered.play(1, 2), "it's player's 1 turn") # player 1 played "J"
+        self.assertFalse(self.game_server_altered.play(1, 4), "it's player's 2 turn")
+        self.assertFalse(self.game_server_altered.play(0, 5), "it's player's 2 turn")
+        self.assertTrue(self.game_server_altered.play(2, 0), "it's player's 2 turn") # player 2 played "J"
+        self.assertTrue(self.game_server_altered.play(1, 0), "it's player's 1 turn, because he won previous trick")
 
 
 
