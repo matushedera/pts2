@@ -7,8 +7,8 @@ from .cardInterface import CardInterface
 class Hand(HandInterface):
 
     def __init__(self, cards: List[CardInterface], trick: TrickInterface):
-        self.card_list = cards
-        self.trick = trick
+        self.card_list: List[CardInterface] = cards
+        self.trick: TrickInterface = trick
 
     def play(self, cardno: int) -> bool:
         if not 0 <= cardno < len(self.card_list):
@@ -21,7 +21,7 @@ class Hand(HandInterface):
             return True
         return False
 
-    def cards(self) -> List[str]:
+    def cards(self) -> List[CardInterface]:
         return self.card_list
 
     def _is_lowest(self, cardno: int) -> bool:

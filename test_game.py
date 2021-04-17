@@ -18,7 +18,7 @@ class GameCreationTestCase(unittest.TestCase):
     def setUp(self):
         class DealerMock(DealerInterface):
             def create_game(self, number_of_players: int) -> Game:
-                return Game(number_of_players, 0, [], None)
+                return Game(number_of_players, 0, [], Trick())
         di: DealerInterface = DealerMock()
         self.gsi: GameServerInterface = GameServer(di)
 
@@ -140,12 +140,18 @@ class GamePlayTestCase(unittest.TestCase):
         class DealerMock(DealerInterface):
             def create_game(self, number_of_players: int) -> Game:
                 pass
-        trick = Trick()
-        hand1 = Hand([Card("2"), Card("6"), Card("7"), Card("A"), Card("Q"), Card("4")], trick)
-        hand2 = Hand([Card("A"), Card("A"), Card("J"), Card("5"), Card("8"), Card("K")], trick)
-        hand3 = Hand([Card("J"), Card("3"), Card("9"), Card("10"), Card("J"), Card("3")], trick)
-        game = Game(3, 0, [hand1, hand2, hand3], trick)
-        self.game_server = GameServer(DealerMock())
+        trick: TrickInterface = Trick()
+        hand1: HandInterface = (
+            Hand([Card("2"), Card("6"), Card("7"), Card("A"), Card("Q"), Card("4")], trick)
+        )
+        hand2: HandInterface = (
+            Hand([Card("A"), Card("A"), Card("J"), Card("5"), Card("8"), Card("K")], trick)
+        )
+        hand3: HandInterface = (
+            Hand([Card("J"), Card("3"), Card("9"), Card("10"), Card("J"), Card("3")], trick)
+        )
+        game: Game = Game(3, 0, [hand1, hand2, hand3], trick)
+        self.game_server: GameServerInterface = GameServer(DealerMock())
         self.game_server.game = game
 
     def test_gameplay_initial_hands(self):

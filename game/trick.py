@@ -6,7 +6,7 @@ from .cardInterface import CardInterface
 class Trick(TrickInterface):
 
     def __init__(self):
-        self.table = []
+        self.table: List[CardInterface] = []
 
     def play_as_lowest(self, c: CardInterface) -> bool:
         self.table.append(c)

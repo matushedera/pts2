@@ -3,10 +3,13 @@ from random import *
 from .game import Game
 from .dealerInterface import DealerInterface
 from .hand import Hand
+from .handInterface import HandInterface
 from .card import Card
+from .cardInterface import CardInterface
 from .trick import Trick
+from .trickInterface import TrickInterface
 
-class Dealer:
+class Dealer(DealerInterface):
 
     def create_game(self, number_of_players: int) -> Game:
         cards = [
@@ -20,13 +23,15 @@ class Dealer:
 
         shuffle(card_stack)
 
+        trick_itf: TrickInterface = Trick()
         hands = []
         for i in range(number_of_players): # 2-4 players
             hand = []
             for o in range(6): # 6 cards in hand
-                hand.append(Card(card_stack.pop()))
-            hands.append(hand)
+                card_itf: CardInterface = Card(card_stack.pop())
+                hand.append(card_itf)
+            hand_itf: HandInterface = Hand(hand, trick_itf)
+            hands.append(hand_itf)
 
-        trick = Trick()
-        game = Game(3, 0, hands, trick)
+        game = Game(3, 0, hands, trick_itf)
         return game

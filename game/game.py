@@ -9,10 +9,10 @@ class Game(GameInterface):
     def __init__(self, number_of_players: int, trick_started_by: int,
         hands: List[HandInterface],
         trick_reference: TrickInterface):
-        self.number_of_players = number_of_players
-        self.trick_started_by = trick_started_by
-        self.hands = hands
-        self.trick_reference = trick_reference
+        self.number_of_players: int = number_of_players
+        self.trick_started_by: int = trick_started_by
+        self.hands: List[HandInterface] = hands
+        self.trick_reference: TrickInterface = trick_reference
 
     def _their_turn(self, player: int) -> bool:
         return player == (
